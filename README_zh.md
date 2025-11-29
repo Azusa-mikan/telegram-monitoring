@@ -346,7 +346,7 @@ const socket = io('http://localhost:5000', {
 
 ## 许可证
 
-本项目采用 [AGPL-3.0](LICENSE) 许可证，允许非商业性使用，转载时请注明原作者与来源。
+本项目采用 [AGPL-3.0](LICENSE) 许可证
 
 ---
 
