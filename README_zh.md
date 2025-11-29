@@ -352,4 +352,4 @@ const socket = io('http://localhost:5000', {
 
 此项目以前就用 GPT-4o vibe coding 过（未公开），现在自己完全重写了一个，并且比原版加入了很多扩展功能
 
-[^1]: 名字灵感来源于 [DECO*27 - モニタリング](https://www.youtube.com/watch?v=kbNdx0yqbZE)
+[^1]: 名字灵感来源于 [DECO*27 - モニタリング](https://www.bilibili.com/video/BV1qDUPYKEzf)
