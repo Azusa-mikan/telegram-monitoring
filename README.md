@@ -328,7 +328,7 @@ Note: `switch_window_time` and `switch_app_time` are Unix timestamps that you ne
 
 ## License
 
-This project is licensed under [CC-BY-NC 4.0](LICENSE), allowing non-commercial use; please credit the original author and source when redistributing.
+This project is licensed under [AGPL-3.0](LICENSE), allowing non-commercial use; please credit the original author and source when redistributing.
 
 ---
 
