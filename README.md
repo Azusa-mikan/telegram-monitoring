@@ -8,6 +8,8 @@ The server runs on Windows/macOS/Linux.
 
 The client supports Windows 10/11 and Android 6.0+ only.
 
+[中文文档](README_zh.md)
+
 ---
 
 ## Run
@@ -321,6 +323,12 @@ Note: `switch_window_time` and `switch_app_time` are Unix timestamps that you ne
 #### Project references
 
 - [Prohibited words list](https://telegra.ph/%E8%BF%9D%E7%A6%81%E8%AF%8D%E5%88%97%E8%A1%A8-11-21) — from [ZGQ Inc.](https://github.com/ZGQ-inc)
+
+---
+
+## License
+
+This project is licensed under [CC-BY-NC 4.0](LICENSE), allowing non-commercial use; please credit the original author and source when redistributing.
 
 ---
 
