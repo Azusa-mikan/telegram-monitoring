@@ -1,0 +1,9 @@
+aiosqlite>=0.21.0
+colorlog>=6.10.1
+pydantic>=2.12.4
+pytelegrambotapi>=4.29.1
+python-socketio>=5.15.0
+pyyaml>=6.0.3
+quart>=0.20.0
+telegram-markdown-converter>=1.0.5
+uvicorn>=0.38.0

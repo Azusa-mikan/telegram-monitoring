@@ -1,0 +1,30 @@
+[project]
+name = "telegram-monitoring"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "colorlog>=6.10.1",
+    "pydantic>=2.12.4",
+    "pytelegrambotapi>=4.29.1",
+    "python-socketio>=5.15.0",
+    "pyyaml>=6.0.3",
+    "quart>=0.20.0",
+    "telegram-markdown-converter>=1.0.5",
+    "uvicorn>=0.38.0",
+]
+
+[dependency-groups]
+dev = [
+    "aiohttp>=3.13.2",
+    "aiotools>=2.2.3",
+    "mss>=10.1.0",
+    "pillow>=12.0.0",
+    "psutil>=7.1.3",
+    "pyinstaller>=6.17.0",
+    "python-socketio[client]>=5.15.0",
+    "pywin32>=311",
+    "win11toast==0.36.2",
+]

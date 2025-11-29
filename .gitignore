@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.spec
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.python-version
+
+client_config.yaml
+config.yaml
+
+data.db
+data.db-shm
+data.db-wal
+
+pyproject2requirements.py

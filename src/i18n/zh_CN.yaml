@@ -1,0 +1,126 @@
+socketio:
+  please_screenshot: "{user} 请求截图"
+  click_allow: "点击允许"
+  is_screenshot: "你已被截图"
+  screenshot_from: "来自 {user}"
+  no_auth_token: "连接的客户端（{sid}）没有 Token 或 Token 错误"
+  auth_token_help: "请使用配置文件中的 Token"
+  reject_connect: "客户端 {sid1} 的连接被拒绝，因为已连接到客户端 {sid2}"
+  type_client: "客户端 {sid} 为监听客户端"
+  warning_connect: |-
+    客户端 {sid} 未提供 Token, 但在查询表单字符串中指定了 Token
+    这不是推荐的做法，请至少在请求头中指定 Token
+  reply: "回复消息"
+  send: "发送"
+  connected: "客户端 {sid} 已连接"
+  disconnected: "客户端 {sid} 已断开"
+
+sqlite:
+  connected: "数据库已连接"
+  add_user: "已添加用户 {user} 到数据库"
+  update_user: "已更新用户 {user} 到数据库"
+  del_user: "已从数据库中删除用户 {user}"
+  add_allow_user: "已添加允许用户 {user} 到数据库"
+  add_ban_user: "已添加禁止用户 {user} 到数据库"
+  del_allow_user: "已从数据库中删除允许用户 {user}"
+  del_ban_user: "已从数据库中删除禁止用户 {user}"
+  close: "数据库已关闭"
+
+telegram:
+  token_empty: "Telegram bot token 为空"
+  command_start: "注册"
+  command_ping: "获取客户端当前窗口信息"
+  command_screenshot: "请求截图"
+  command_info: "获取客户端硬件信息"
+  command_phone_info: "获取手机信息"
+  command_ban: "封禁用户"
+  command_unban: "解封用户"
+  command_add: "添加允许用户"
+  command_list: "列出已注册用户"
+  command_allowlist: "列出允许用户"
+  command_banlist: "列出封禁用户"
+  command_del: "移除允许用户"
+  command_help: "显示帮助信息"
+  no_admin: "你没有管理员权限"
+  banned_user: "你已被封禁，无法使用此机器人"
+  no_register: "你没有注册，请使用 /start 命令注册"
+  register_user: |-
+    欢迎！{user}
+    你已成功注册。
+  register_user_already: "你已注册，请使用 /ping 命令获取客户端当前窗口信息"
+  help: |-
+    /start - 注册用户
+    /ping - 获取客户端当前窗口信息
+    /screenshot - 请求截图
+    /info - 获取客户端硬件信息
+    /phone_info - 获取手机信息
+    /ban - 封禁用户
+    /unban - 解封用户
+    /add - 添加允许用户
+    /list - 列出已注册用户
+    /allowlist - 列出允许用户
+    /banlist - 列出封禁用户
+    /del - 移除允许用户
+    /help - 列出此消息
+
+    向此机器人发送消息可通知到客户端, 仅支持纯文本消息
+    刷屏或发广告行为会被封禁
+  no_app: "暂无"
+  no_client: "客户端未连接"
+  second: "{time} 秒前"
+  minute: "{time} 分钟前"
+  window_msg: |
+    电脑当前窗口：{title}
+    手机当前应用：{phone_app}
+    > 电脑历史窗口:
+  phone_window_msg: |
+    > 手机历史应用:
+  forbidden_screenshot: "截图功能被禁用"
+  wait_screenshot: "截图中..."
+  no_screenshot: "截图请求未通过"
+  client_timeout: "客户端超时"
+  battery_charging_direct: "直流电"
+  battery_charging_smart: "智能充电"
+  battery_charging_charge: "正在充电"
+  battery_charging_not: "未充电"
+  hardware_info: |
+    客户端硬件信息：
+    处理器：{name}
+    基准速度：{base_speed}
+    核心数/线程数：{cores}/{threads}
+    当前占用率：{usage}%
+    总内存/可用内存：{total_mb} MB / {available_mb} MB
+    电池电量：{battery_percent}% {is_charging}
+    系统运行时间：{uptime}
+  gpu_info: |
+    > GPU {counter}:
+    > GPU: {name}
+    > 显存: {memory} MB
+    > 显示模式: {mode}
+  phone_info: |-
+    手机信息：
+    当前状态：{status}
+    电池电量：{battery}% {power_status}
+    设备名称：{device_info}
+    Android 版本：{android_version}
+    系统运行时间：{uptime}
+  input_user_id: "请输入用户 ID"
+  input_user_id_error: "请输入正确的用户 ID"
+  no_user: "暂无用户"
+  list_user: |-
+    已注册用户：
+  list_allow_user: |-
+    允许用户：
+  list_ban_user: |-
+    封禁用户：
+  user_no_register: "用户 {user} 未注册"
+  add_user_success: "用户 {user} 已添加到允许列表"
+  del_user_success: "用户 {user} 已从允许列表中删除"
+  ban_user_success: "用户 {user} 已被封禁"
+  unban_user_success: "用户 {user} 已解封"
+  none_text: "仅支持文本消息"
+  ban_success: "你已被封禁"
+  ready_flood_message: "请不要刷屏，否则会被封禁"
+  flood_message: "你已被封禁，原因：刷屏"
+  command_register_success: "已注册 {commands} 个命令"
+  started: "Telegram 机器人已启动"
