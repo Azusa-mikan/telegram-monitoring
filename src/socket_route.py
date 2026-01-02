@@ -4,6 +4,7 @@ import json
 import time
 from collections import deque
 from pydantic import BaseModel, ValidationError
+import hmac
 from .config import config
 from .log import socketio_log
 from .i18n import itr
@@ -83,7 +84,9 @@ async def connect(sid: str, environ: dict, auth: dict[str, str]) -> bool:
             await emit_disconnect()
             return False
 
-    if auth_token != config.token:
+    auth_token_byte = auth_token.encode("utf-8")
+    config_token_byte = config.token.encode("utf-8")
+    if not hmac.compare_digest(auth_token_byte, config_token_byte):
         await emit_disconnect()
         return False
 
@@ -156,12 +159,20 @@ async def window_change(sid: str, title: str, switch_window_time: int):
 
 @app.route("/", methods=["GET"])
 async def _index() -> quart.Response:
-    return quart.Response(status=204)
+    return quart.Response(
+        response="Copyright (C) 2026 Azusa-Mikan\n",
+        headers={
+            "X-Copyright": "Copyright (C) 2026 Azusa-Mikan"
+        },
+        content_type="text/plain"
+    )
 
 @app.route("/now_window", methods=["GET"])
 async def _get_now_window() -> quart.Response:
     token = quart.request.headers.get("Authorization", "").replace("Bearer ", "")
-    if token != config.token:
+    auth_token_byte = token.encode("utf-8")
+    config_token_byte = config.token.encode("utf-8")
+    if not hmac.compare_digest(auth_token_byte, config_token_byte):
         return quart.Response(status=401)
 
     data: str | None = await emit_window_change(False)
@@ -173,7 +184,9 @@ async def _get_now_window() -> quart.Response:
 @app.route("/now_app", methods=["GET"])
 async def _get_now_app() -> quart.Response:
     token = quart.request.headers.get("Authorization", "").replace("Bearer ", "")
-    if token != config.token:
+    auth_token_byte = token.encode("utf-8")
+    config_token_byte = config.token.encode("utf-8")
+    if not hmac.compare_digest(auth_token_byte, config_token_byte):
         return quart.Response(status=401)
 
     data: str | None = await emit_phone_app(False)
@@ -184,9 +197,10 @@ async def _get_now_app() -> quart.Response:
 
 @app.route("/phone_webhook", methods=["POST"])
 async def _push_phone_now_app() -> quart.Response:
-    global phone_now_app
     token = quart.request.headers.get("Authorization", "").replace("Bearer ", "")
-    if token != config.token:
+    auth_token_byte = token.encode("utf-8")
+    config_token_byte = config.token.encode("utf-8")
+    if not hmac.compare_digest(auth_token_byte, config_token_byte):
         return quart.Response(status=401)
 
     phone_now_app = await quart.request.get_json()
