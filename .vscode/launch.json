@@ -5,17 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "telegram_monitoring"
+        },
+        {
             "name": "Python Debugger: Client",
             "type": "debugpy",
             "request": "launch",
             "program": "client.py",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Python Debugger: Server",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "main.py",
             "console": "integratedTerminal"
         }
     ]

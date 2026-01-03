@@ -1,7 +1,8 @@
 import yaml
 from pydantic import BaseModel, ValidationError, ConfigDict
-from .config import config
-from .log import i18n_log
+from pathlib import Path
+from telegram_monitoring.src.config import config
+from telegram_monitoring.src.log import i18n_log
 
 default_en = {
     "socketio": {
@@ -228,9 +229,11 @@ class I18n(BaseModel):
     sqlite: i18n_sqlite
     telegram: i18n_telegram
 
+i18n_path = Path(__file__).parent / "i18n"
+
 def load_i18n(lang: str = config.lang) -> I18n:
     try:
-        with open(f"src/i18n/{lang}.yaml", "r", encoding="utf-8") as f:
+        with open(i18n_path / f"{lang}.yaml", "r", encoding="utf-8") as f:
             try:
                 _i18n = I18n.model_validate(yaml.safe_load(f))
                 i18n_log.info(f"Using language {lang}")

@@ -1,6 +1,6 @@
 import aiosqlite
-from .log import sql_log
-from .i18n import itr
+from telegram_monitoring.src.log import sql_log
+from telegram_monitoring.src.i18n import itr
 
 __all__ = [
     "get_user_db",

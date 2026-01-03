@@ -6,12 +6,12 @@ from asyncio import sleep
 from collections import deque
 from telegram_markdown_converter import convert_markdown
 import sys
-from .config import config
-from .log import telegram_log
-from .socket_route import sio, get_now_window, get_client_sid, get_phone_now_app
-from .socket_command import *
-from .sql import *
-from .i18n import itr
+from telegram_monitoring.src.config import config
+from telegram_monitoring.src.log import telegram_log
+from telegram_monitoring.src.socket_route import sio, get_now_window, get_client_sid, get_phone_now_app
+from telegram_monitoring.src.socket_command import *
+from telegram_monitoring.src.sql import *
+from telegram_monitoring.src.i18n import itr
 
 _times = deque()
 

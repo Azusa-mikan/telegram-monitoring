@@ -1,6 +1,6 @@
 import colorlog
 import logging
-from .config import config
+from telegram_monitoring.src.config import config
 
 log_level_dist = {
     "DEBUG": logging.DEBUG,
@@ -23,8 +23,8 @@ handler.setFormatter(colorlog.ColoredFormatter(
     },
 ))
 logging.basicConfig(handlers=[handler], level=log_level_dist[config.log_level])
-logging.getLogger("uvicorn.error").name = "uvicorn"
-logging.getLogger("uvicorn.access").name = "uvicorn"
+logging.getLogger("uvicorn.error").name = "fastapi"
+logging.getLogger("uvicorn.access").name = "fastapi"
 logging.getLogger("aiosqlite").name = "sql"
 
 logging.getLogger("TeleBot").setLevel(logging.ERROR)

@@ -23,10 +23,10 @@ The client supports Windows 10/11 and Android 6.0+ only.
 uv sync
 
 # Run directly
-uv run main.py
+uv run python -m telegram_monitoring
 
 # Or run without bot, API-only
-uv run main.py --nobot
+uv run python -m telegram_monitoring --nobot
 ```
 
 #### Using system Python
@@ -41,10 +41,10 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-python main.py
+python -m telegram_monitoring
 
 # Or run without bot, API-only
-python main.py --nobot
+python -m telegram_monitoring --nobot
 ```
 
 On first run, a `config.yaml` and API token will be created. The token is printed to the console.
@@ -305,9 +305,8 @@ Note: `switch_window_time` and `switch_app_time` are Unix timestamps that you ne
 - [pytelegrambotapi](https://github.com/eternnoir/pyTelegramBotAPI) — connects to Telegram
 - [python-socketio](https://github.com/miguelgrinberg/python-socketio) — Server–Client architecture
 - [pyyaml](https://github.com/yaml/pyyaml) — load configuration
-- [quart](https://github.com/pallets/quart) — provides the HTTP API
+- [fastapi](https://github.com/fastapi/fastapi) — provides the HTTP API
 - [telegram-markdown-converter](https://github.com/ngoldo/telegram-markdown-converter) — escapes characters not accepted by MarkdownV2
-- [uvicorn](https://github.com/Kludex/uvicorn) — server startup
 
 ##### Client
 

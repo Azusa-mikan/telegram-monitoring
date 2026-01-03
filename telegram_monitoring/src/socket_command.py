@@ -1,8 +1,8 @@
 from pydantic import BaseModel, ValidationError
-from .socket_route import sio, get_client_sid
-from .sql import *
-from .log import socketio_log
-from .i18n import itr
+from telegram_monitoring.src.socket_route import sio, get_client_sid
+from telegram_monitoring.src.sql import *
+from telegram_monitoring.src.log import socketio_log
+from telegram_monitoring.src.i18n import itr
 
 __all__ = [
     "client_toast",

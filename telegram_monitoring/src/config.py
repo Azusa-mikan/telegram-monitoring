@@ -2,6 +2,7 @@ from pydantic import BaseModel, ValidationError, ConfigDict
 import yaml
 import sys
 import secrets
+from pathlib import Path
 
 default_config = {
     "lang": "zh_CN",
@@ -41,7 +42,7 @@ class Config(BaseModel):
     telegram: TelegramConfig
     model_config = ConfigDict(extra="forbid")
 
-def load_config(config_path: str = "config.yaml") -> Config:
+def load_config(config_path = Path(__file__).parents[2] / "config.yaml") -> Config:
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)

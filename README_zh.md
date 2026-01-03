@@ -21,10 +21,10 @@
 uv sync
 
 # 直接运行
-uv run main.py
+uv run python -m telegram_monitoring
 
 # 或不使用bot，仅作为API
-uv run main.py --nobot
+uv run python -m telegram_monitoring --nobot
 ```
 
 #### 使用本机 Python
@@ -39,10 +39,10 @@ source .venv/bin/activate
 
 # 安装依赖
 pip install -r requirements.txt
-python main.py
+python -m telegram_monitoring
 
 # 或不使用bot，仅作为API
-python main.py --nobot
+python -m telegram_monitoring --nobot
 ```
 
 首次运行时会创建 config.yaml 配置文件和 API token，token 会打印在控制台
@@ -311,11 +311,9 @@ const socket = io('http://localhost:5000', {
 
 - [pyyaml](https://github.com/yaml/pyyaml) —— 用于加载配置
 
-- [quart](https://github.com/pallets/quart) —— 用于提供 HTTP API
+- [fastapi](https://github.com/fastapi/fastapi) —— 用于提供 HTTP API
 
 - [telegram-markdown-converter](https://github.com/ngoldo/telegram-markdown-converter) —— 用于转义 MarkdownV2 不接受的字符
-
-- [uvicorn](https://github.com/Kludex/uvicorn) —— 用于启动
 
 ##### 客户端
 
@@ -338,9 +336,6 @@ const socket = io('http://localhost:5000', {
 #### 项目引用
 
 - [违禁词列表](https://telegra.ph/%E8%BF%9D%E7%A6%81%E8%AF%8D%E5%88%97%E8%A1%A8-11-21) —— 来自 [ZGQ Inc.](https://github.com/ZGQ-inc)
-
----
-
 
 ---
 
