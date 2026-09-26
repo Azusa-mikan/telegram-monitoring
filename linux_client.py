@@ -676,30 +676,32 @@ def main() -> None:
 
     async def run() -> None:
         loop_holder["loop"] = asyncio.get_running_loop()
-        await sio.connect(config.server_url, auth={"token": config.token})
-        try:
-            await sio.wait()
-        finally:
+        while True:
             try:
-                await sio.disconnect()
-            except Exception:
-                pass
+                if sio.connected:
+                    await sio.disconnect()
+                await sio.connect(config.server_url, auth={"token": config.token})
+                await sio.wait()
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                log.error(f"连接服务器失败: {e}")
+                await asyncio.sleep(3)
+            finally:
+                try:
+                    if sio.connected:
+                        await sio.disconnect()
+                except Exception:
+                    pass
 
     # watcher 进程内只启动一次，不随 socketio 重连而重启
     watcher.start()
     try:
-        while True:
-            try:
-                asyncio.run(run())
-            except KeyboardInterrupt:
-                log.debug("收到 KeyboardInterrupt，退出...")
-                break
-            except asyncio.CancelledError:
-                log.debug("任务被取消，退出...")
-                break
-            except Exception as e:
-                log.error(f"连接服务器失败: {e}")
-                time.sleep(3)
+        # 必须只建一个事件循环：socketio.AsyncClient 的内部原语
+        # 绑定在创建它的事件循环上，跨 asyncio.run() 复用会报
+        # "bound to a different event loop" / "not in a disconnected state"，
+        # 导致断线后再也无法重连。重连循环因此放在循环内部。
+        asyncio.run(run())
     except KeyboardInterrupt:
         log.debug("收到 KeyboardInterrupt，退出...")
     finally:
