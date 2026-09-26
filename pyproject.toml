@@ -13,6 +13,7 @@ dependencies = [
     "python-socketio>=5.15.0",
     "pyyaml>=6.0.3",
     "telegram-markdown-converter>=1.0.5",
+    "uvicorn>=0.38.0",
 ]
 
 [dependency-groups]

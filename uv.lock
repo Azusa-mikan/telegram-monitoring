@@ -1541,6 +1541,7 @@ dependencies = [
     { name = "python-socketio" },
     { name = "pyyaml" },
     { name = "telegram-markdown-converter" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -1569,6 +1570,7 @@ requires-dist = [
     { name = "python-socketio", specifier = ">=5.15.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "telegram-markdown-converter", specifier = ">=1.0.5" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
 ]
 
 [package.metadata.requires-dev]
