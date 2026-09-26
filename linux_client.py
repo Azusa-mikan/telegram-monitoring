@@ -38,6 +38,9 @@ _KWIN_SCRIPTING_PATH = "/Scripting"
 _KWIN_SCRIPTING_IFACE = "org.kde.kwin.Scripting"
 _KWIN_SCRIPT_NAME = "telegram_monitoring_window_watcher"
 
+# 看门狗检查间隔（秒）
+_WATCHDOG_INTERVAL = 30
+
 # 常驻 KWin 脚本内容：监听窗口激活，回调到我们的 D-Bus 服务
 _KWIN_SCRIPT = """
 function _tm_emit(client) {
@@ -107,6 +110,8 @@ class KWinWindowWatcher:
         self._bus: dbus.Bus | None = None
         self._service: _WindowService | None = None
         self._bus_name: dbus.service.BusName | None = None
+        self._watchdog_thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
 
     def start(self) -> None:
         """注册 D-Bus 服务、加载 KWin 脚本并启动事件循环（非阻塞）"""
@@ -128,6 +133,13 @@ class KWinWindowWatcher:
 
         # 加载 KWin 脚本
         self._load_kwin_script()
+
+        # 启动看门狗，定期检查脚本存活
+        self._watchdog_thread = threading.Thread(
+            target=self._watchdog, daemon=True, name="kwin-watchdog"
+        )
+        self._watchdog_thread.start()
+
         logger.info("KWin window watcher started")
 
     def _load_kwin_script(self) -> None:
@@ -137,17 +149,72 @@ class KWinWindowWatcher:
         self._script_file = script_dir / f"{_KWIN_SCRIPT_NAME}.js"
         self._script_file.write_text(_KWIN_SCRIPT, encoding="utf-8")
 
-        kwin = self._bus.get_object(_KWIN_SERVICE, _KWIN_SCRIPTING_PATH)
-        scripting = dbus.Interface(kwin, _KWIN_SCRIPTING_IFACE)
-
-        # 单参重载：只传脚本路径，返回 int（脚本 id）
-        self._script_id = int(scripting.loadScript(str(self._script_file)))
-        # start() 启动所有已加载但未运行的脚本
-        scripting.start()
+        # loadScript 有两个重载（单参 s 和双参 ss），dbus-python 的透明代理
+        # 只按反射到的单个签名校验，因此用 call_blocking 显式声明 ss。
+        # 带上 pluginName 后，才能用 isScriptLoaded/unloadScript 按名字管理。
+        self._script_id = int(self._bus.call_blocking(
+            _KWIN_SERVICE,
+            _KWIN_SCRIPTING_PATH,
+            _KWIN_SCRIPTING_IFACE,
+            "loadScript",
+            "ss",
+            (str(self._script_file), _KWIN_SCRIPT_NAME),
+        ))
+        self._bus.call_blocking(
+            _KWIN_SERVICE,
+            _KWIN_SCRIPTING_PATH,
+            _KWIN_SCRIPTING_IFACE,
+            "start",
+            "",
+            (),
+        )
         logger.debug(f"KWin script loaded, id={self._script_id}")
 
+    def _is_script_loaded(self) -> bool:
+        """检查 KWin 脚本是否仍在运行（KWin 重启后会变为 False）"""
+        try:
+            scripting = dbus.Interface(
+                self._bus.get_object(_KWIN_SERVICE, _KWIN_SCRIPTING_PATH),
+                _KWIN_SCRIPTING_IFACE,
+            )
+            return bool(scripting.isScriptLoaded(_KWIN_SCRIPT_NAME))
+        except Exception as e:
+            logger.debug(f"检查 KWin 脚本状态失败: {e}")
+            return False
+
+    def _watchdog(self) -> None:
+        """
+        看门狗线程：定期检查脚本存活，失效则重载。
+        覆盖 KWin 崩溃/重启导致动态脚本丢失的情况。
+        """
+        import time as _time
+
+        while not self._stop_event.is_set():
+            _time.sleep(_WATCHDOG_INTERVAL)
+            if self._stop_event.is_set():
+                break
+            if not self._is_script_loaded():
+                logger.warning("KWin 脚本已失效，尝试重新加载...")
+                try:
+                    self._load_kwin_script()
+                    logger.info("KWin 脚本已重新加载")
+                except Exception as e:
+                    logger.error(f"重新加载 KWin 脚本失败: {e}")
+
     def stop(self) -> None:
-        """停止事件循环"""
+        """停止看门狗与事件循环，并卸载 KWin 脚本"""
+        self._stop_event.set()
+        try:
+            self._bus.call_blocking(
+                _KWIN_SERVICE,
+                _KWIN_SCRIPTING_PATH,
+                _KWIN_SCRIPTING_IFACE,
+                "unloadScript",
+                "s",
+                (_KWIN_SCRIPT_NAME,),
+            )
+        except Exception as e:
+            logger.debug(f"卸载 KWin 脚本失败: {e}")
         if self._glib_loop is not None:
             self._glib_loop.quit()
         logger.info("KWin window watcher stopped")
