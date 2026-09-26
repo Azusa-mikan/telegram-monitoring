@@ -30,3 +30,8 @@ dev = [
     "pywin32>=311; sys_platform == 'win32'",
     "win11toast==0.36.2; sys_platform == 'win32'",
 ]
+
+# 默认不安装 dev 组（服务端部署只需 dependencies）。
+# 开发客户端时用: uv sync --dev  /  uv run --dev
+[tool.uv]
+default-groups = []
