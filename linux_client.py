@@ -169,6 +169,278 @@ def is_supported() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# 截图：通过 Spectacle CLI（KDE 自带，Wayland 下无需授权框）
+# ---------------------------------------------------------------------------
+
+def take_screenshot() -> bytes:
+    """
+    用 spectacle 后台模式截取整个桌面，返回 PNG 字节。
+
+    若图片超过 10MB（服务端限制），依次降质/缩放为 JPEG。
+    与 client.py 的 _make_screenshot_bytes 行为保持一致。
+    """
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "shot.png"
+        subprocess.run(
+            ["spectacle", "-b", "-n", "-f", "-o", str(out)],
+            check=True,
+            timeout=15,
+            capture_output=True,
+        )
+        data = out.read_bytes()
+
+    max_size = 10 * 1024 * 1024
+    if len(data) <= max_size:
+        return data
+
+    # 超过 10MB，转为 JPEG 并逐步降质/缩放
+    from io import BytesIO
+    from PIL import Image
+
+    logger.warning(f"图片过大 {len(data) / (1024 * 1024):.2f} MB，使用 JPEG")
+    img = Image.open(BytesIO(data)).convert("RGB")
+    quality = 95
+    while True:
+        b = BytesIO()
+        img.save(b, format="JPEG", quality=quality, optimize=True, progressive=True)
+        data = b.getvalue()
+        if len(data) <= max_size or quality <= 70:
+            break
+        quality -= 5
+    w, h = img.size
+    while len(data) > max_size and min(w, h) > 480:
+        w, h = int(w * 0.85), int(h * 0.85)
+        resized = img.resize((w, h), resample=Image.Resampling.LANCZOS)
+        b = BytesIO()
+        resized.save(b, format="JPEG", quality=max(50, quality), optimize=True, progressive=True)
+        data = b.getvalue()
+    return data
+
+
+# ---------------------------------------------------------------------------
+# 通知：通过 notify-send
+# 参数语义见 /home/aaccgg/文档/docs/notify-send.md
+# ---------------------------------------------------------------------------
+
+def _notify_send(title: str, body: str, action: str | None = None, timeout_s: float = 12.0) -> tuple[bool, str]:
+    """
+    发送桌面通知。
+
+    action 非空时附加该 `-A` 动作并隐含 --wait，等待用户操作：
+      - 用户点击动作：stdout 输出动作名，返回 (True, 动作名)
+      - 通知被关闭 / 超时：返回 (False, "")
+    成功与否以退出码判定（不解析受 locale 影响的 stderr）。
+
+    参数语义见 /home/aaccgg/文档/docs/notify-send.md
+    """
+    import subprocess
+
+    cmd = ["notify-send", "-a", "Telegram Monitoring", title, body]
+    if action is not None:
+        # 通知在等待窗口结束时自动消失，避免一直挂在屏幕上
+        cmd += ["-A", action, "-t", str(int(timeout_s * 1000))]
+
+    try:
+        # 极端情况下 notify-send 会阻塞等待激活，必须设超时
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        # 未操作，视为未同意
+        logger.debug("notify-send 超时（用户未操作）")
+        return False, ""
+    if proc.returncode != 0:
+        logger.error(f"notify-send 失败: {proc.returncode} {proc.stderr.strip()}")
+        return False, ""
+    result = proc.stdout.strip()
+    # 需要动作时，stdout 为空表示用户未点击（通知过期或关闭）
+    if action is not None and not result:
+        return False, ""
+    return True, result
+
+
+# ---------------------------------------------------------------------------
+# 硬件信息：psutil 为主，GPU 尽力探测
+# ---------------------------------------------------------------------------
+
+def _get_cpu_name() -> str:
+    import platform
+    # 优先从 /proc/cpuinfo 的 model name 取（比 platform.processor 准确）
+    try:
+        with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
+            for line in f:
+                if line.lower().startswith("model name"):
+                    name = line.split(":", 1)[1].strip()
+                    if name:
+                        return name
+    except Exception:
+        pass
+    return platform.processor() or "Unknown CPU"
+
+
+def _pci_id_to_name(vendor_id: str, device_id: str) -> str | None:
+    """用 /usr/share/hwdata/pci.ids 查设备名（返回该 vendor 段下的 device 名）"""
+    from pathlib import Path
+
+    for p in (Path("/usr/share/hwdata/pci.ids"), Path("/usr/share/misc/pci.ids")):
+        if not p.exists():
+            continue
+        try:
+            in_vendor = False
+            with open(p, "r", encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    if not line.strip() or line.startswith("#"):
+                        continue
+                    if not line.startswith("\t"):
+                        # 顶格的 vendor 行
+                        in_vendor = line[:4].lower() == vendor_id.lower()
+                        continue
+                    if in_vendor and line.startswith("\t") and not line.startswith("\t\t"):
+                        tok = line.strip().split(None, 1)
+                        if tok and tok[0].lower() == device_id.lower():
+                            return tok[1] if len(tok) > 1 else None
+        except Exception:
+            continue
+    return None
+
+
+def _get_video_mode() -> str | None:
+    """用 kscreen-doctor 解析当前显示模式，如 '2560x1440@144Hz'"""
+    import subprocess
+    import re
+
+    try:
+        out = subprocess.run(
+            ["kscreen-doctor", "-o"], capture_output=True, text=True, timeout=5
+        ).stdout
+    except Exception:
+        return None
+
+    # 当前模式带 "*" 后缀，如 "3:2560x1440@144.00*"
+    for line in out.splitlines():
+        if "Modes:" in line or "*" in line:
+            m = re.search(r"(\d+)x(\d+)@([\d.]+)\*", line)
+            if m:
+                w, h, rr = m.group(1), m.group(2), m.group(3)
+                return f"{w}x{h}@{round(float(rr))}Hz"
+    return None
+
+
+def _get_gpu_info() -> list[dict[str, str | int | None]]:
+    """探测 GPU 名称、显存与显示模式"""
+    import subprocess
+    import re
+    from pathlib import Path
+
+    video_mode = _get_video_mode()
+    res: list[dict[str, str | int | None]] = []
+
+    # 用 lspci -nn 拿到 [vendor:device]，再查 pci.ids 得到设备名
+    try:
+        out = subprocess.run(
+            ["lspci", "-nn"], capture_output=True, text=True, timeout=5
+        ).stdout
+        for line in out.splitlines():
+            if not re.search(
+                r"\b(VGA compatible controller|3D controller|Display controller)\b", line
+            ):
+                continue
+            m = re.search(r"\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\]", line)
+            name = None
+            if m:
+                name = _pci_id_to_name(m.group(1), m.group(2))
+            if not name:
+                # 退回 lspci 原文（去掉 "(rev xx)" 噪声）
+                name = re.sub(r"\s*\(rev [0-9a-fA-F]+\)\s*$", "", line.split(":", 2)[-1].strip())
+
+            memory_mb: int | None = None
+            # 用驱动暴露的 vram 总量
+            slot = line.split()[0]  # 如 63:00.0
+            for card in Path("/sys/class/drm").glob("card[0-9]*"):
+                try:
+                    slot_file = card / "device" / "uevent"
+                    if not slot_file.exists():
+                        continue
+                    uevent = slot_file.read_text()
+                    if f"PCI_SLOT_NAME=0000:{slot}" not in uevent:
+                        continue
+                    vram = card / "device" / "mem_info_vram_total"
+                    if vram.exists():
+                        memory_mb = int(vram.read_text().strip()) // (1024 * 1024)
+                    break
+                except Exception:
+                    continue
+
+            res.append({"name": name, "memory_mb": memory_mb, "video_mode": video_mode})
+    except Exception:
+        pass
+
+    # lspci 不可用则退回 /sys/class/drm 的驱动名
+    if not res:
+        try:
+            for card in Path("/sys/class/drm").glob("card[0-9]*"):
+                driver = card / "device" / "driver"
+                if driver.exists():
+                    res.append({
+                        "name": driver.resolve().name,
+                        "memory_mb": None,
+                        "video_mode": video_mode,
+                    })
+        except Exception:
+            pass
+
+    return res
+
+
+def get_hard_info() -> dict:
+    """采集硬件信息，字段与 client.py 的 get_hard_info 一致"""
+    import time
+    import psutil
+
+    cpu_name = _get_cpu_name()
+    freq = psutil.cpu_freq()
+    cpu_speed = f"{((freq.max or freq.current) / 1000):.2f} GHz" if freq else "Unknown"
+    cpu_cores = psutil.cpu_count(logical=False) or 0
+    cpu_threads = psutil.cpu_count(logical=True) or 0
+    cpu_usage = psutil.cpu_percent()
+
+    sysmem = psutil.virtual_memory()
+    total_mb = int(sysmem.total / (1024 * 1024))
+    available_mb = int(sysmem.available / (1024 * 1024))
+
+    battery = psutil.sensors_battery()
+    if battery is None:
+        logger.warning("未找到电池")
+        battery_percent, is_charging = 0, False
+    else:
+        battery_percent, is_charging = int(battery.percent), bool(battery.power_plugged)
+
+    uptime = int(time.time() - psutil.boot_time())
+
+    return {
+        "cpu_info": {
+            "name": cpu_name,
+            "base_speed": cpu_speed,
+            "cores": cpu_cores,
+            "threads": cpu_threads,
+            "usage": cpu_usage,
+        },
+        "memory": {
+            "total_mb": total_mb,
+            "available_mb": available_mb,
+        },
+        "battery": {
+            "percent": battery_percent,
+            "is_charging": is_charging,
+        },
+        "uptime": uptime,
+        "gpu_info": _get_gpu_info(),
+    }
+
+
+# ---------------------------------------------------------------------------
 # 以下是 Linux 客户端主程序（复用与 client.py 相同的配置文件 client_config.yaml）
 # ---------------------------------------------------------------------------
 
@@ -276,13 +548,75 @@ def main() -> None:
         log.info(f"已断开来自服务器的连接: {reason}")
         return False
 
+    @sio.event
+    async def screenshot() -> bytes:
+        """服务端请求截图，返回 PNG/JPEG 字节"""
+        data = await asyncio.to_thread(take_screenshot)
+        log.debug(f"已创建图片大小: {len(data) / (1024 * 1024):.2f} MB")
+        return data
+
+    @sio.event
+    async def client_toast(data: dict) -> None:
+        """服务端请求弹通知（仅提示）"""
+        title = data.get("title", "")
+        body = data.get("body", "")
+        log.debug(f"服务器通知: {data}")
+        await asyncio.to_thread(_notify_send, title, body, None)
+
+    @sio.on("get_hard_info")
+    async def _handle_get_hard_info() -> dict:
+        """服务端请求硬件信息"""
+        return await asyncio.to_thread(get_hard_info)
+
+    @sio.event
+    async def client_toast_on_click(data: dict) -> bytes:
+        """
+        服务端请求截图，需客户端当前使用者点击"允许"后才执行。
+
+        安全：非允许列表用户发起截图时，必须经客户端使用者同意。
+        这里弹出一条带"允许"动作的通知并等待点击，只有用户点击
+        "允许"才截图；未点击（关闭通知 / 超时）返回空字节，不截图。
+        """
+        title = data.get("title", "")
+        body = data.get("body", "")
+        log.debug(f"服务器截图请求（等待用户允许）: {data}")
+
+        # 服务端 client_screenshot_on_click 的超时是 10 秒，
+        # 这里给用户约 8 秒的点击窗口，避免服务端先超时。
+        # -A 的 NAME 设为 "allow"，用户点击后 stdout 返回 "allow"。
+        clicked, action = await asyncio.to_thread(
+            _notify_send, title, body, "allow=允许", 8.0
+        )
+        if not clicked or action != "allow":
+            log.info("用户未允许截图，已取消")
+            return b""
+
+        data_bytes = await asyncio.to_thread(take_screenshot)
+        log.debug(f"已创建图片大小: {len(data_bytes) / (1024 * 1024):.2f} MB")
+        return data_bytes
+
+    @sio.event
+    async def get_user_msg(name: str, msg: str) -> None:
+        """服务端转发用户消息"""
+        if config.chat_mode:
+            import sys as _sys
+            _sys.stdout.write("\r" + " " * 100 + "\r")
+            print(f"[{name}]: {msg}")
+            _sys.stdout.write("> ")
+            _sys.stdout.flush()
+        else:
+            log.debug(f"收到来自 {name} 的消息: {msg}")
+
     async def run() -> None:
         loop_holder["loop"] = asyncio.get_running_loop()
         await sio.connect(config.server_url, auth={"token": config.token})
         try:
             await sio.wait()
         finally:
-            await sio.disconnect()
+            try:
+                await sio.disconnect()
+            except Exception:
+                pass
 
     # watcher 进程内只启动一次，不随 socketio 重连而重启
     watcher.start()
@@ -291,11 +625,16 @@ def main() -> None:
             try:
                 asyncio.run(run())
             except KeyboardInterrupt:
-                log.debug("KeyboardInterrupt received, exiting...")
+                log.debug("收到 KeyboardInterrupt，退出...")
+                break
+            except asyncio.CancelledError:
+                log.debug("任务被取消，退出...")
                 break
             except Exception as e:
                 log.error(f"连接服务器失败: {e}")
                 time.sleep(3)
+    except KeyboardInterrupt:
+        log.debug("收到 KeyboardInterrupt，退出...")
     finally:
         watcher.stop()
 
