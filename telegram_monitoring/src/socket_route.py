@@ -14,7 +14,7 @@ from telegram_monitoring.src.i18n import itr
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if getattr(app.state, "need_start_bot", False):
-        from telegram_monitoring.src.sql import init_db, close_con
+        from telegram_monitoring.src.sql import init_db
         from telegram_monitoring.src.telegram import bot, commands
         await init_db()
         await bot.set_my_commands(commands)
@@ -239,11 +239,11 @@ async def _push_phone_now_app(request: PhoneWebhook) -> Response:
     return Response(status_code=200)
     
 
-async def get_now_window() -> list[tuple[str, int]]:
+def get_now_window() -> list[tuple[str, int]]:
     return list(now_window_list)
 
 def get_client_sid() -> str:
     return client_sid
 
-async def get_phone_now_app() -> dict[str, str | int | list[tuple[str, int]]]:
+def get_phone_now_app() -> dict[str, str | int | list[tuple[str, int]]]:
     return phone_now_app

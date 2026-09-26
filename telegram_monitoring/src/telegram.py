@@ -6,6 +6,7 @@ from asyncio import sleep
 from collections import deque
 from telegram_markdown_converter import convert_markdown
 import sys
+from pathlib import Path
 from telegram_monitoring.src.config import config
 from telegram_monitoring.src.log import telegram_log
 from telegram_monitoring.src.socket_route import sio, get_now_window, get_client_sid, get_phone_now_app
@@ -16,7 +17,8 @@ from telegram_monitoring.src.i18n import itr
 _times = deque()
 
 patterns: list[str] = []
-with open('prohibited_words.txt', encoding='utf-8') as f:
+_prohibited_words_path = Path(__file__).parents[2] / "prohibited_words.txt"
+with open(_prohibited_words_path, encoding='utf-8') as f:
     for line in f:
         patterns.append(line.rstrip('\n'))
 
@@ -128,7 +130,8 @@ def should_handle(func):
 async def start(message):
     """注册用户"""
     user_id: int = message.from_user.id
-    user_name: str = "@" + message.from_user.username or ""
+    username = message.from_user.username
+    user_name: str = f"@{username}" if username else ""
     full_name: str = message.from_user.full_name
     if not await add_user_db(user_id, user_name, full_name):
         await bot.send_message(
@@ -152,8 +155,8 @@ async def help(message):
 @user
 async def get_window(message):
     """获取当前客户端信息"""
-    now_window_list = await get_now_window()
-    phone_app = await get_phone_now_app()
+    now_window_list = get_now_window()
+    phone_app = get_phone_now_app()
     phone_now_app = phone_app["name"] if phone_app else itr.telegram.no_app
     app_list: list[tuple[str, int]] = (
         phone_app["app_list"]
@@ -280,7 +283,7 @@ async def hard_info(message):
 @user
 async def phone_info(message):
     """获取手机信息"""
-    phone_now_app = await get_phone_now_app()
+    phone_now_app = get_phone_now_app()
     if not phone_now_app:
         await bot.send_message(message.chat.id, itr.telegram.no_app)
         return
@@ -452,8 +455,8 @@ async def all_msg(message):
         return
 
     userfullname = message.from_user.full_name
-    username = "@" + message.from_user.username or ""
-    await update_user_db(message.from_user.id, username, userfullname)
+    username = message.from_user.username
+    await update_user_db(message.from_user.id, f"@{username}" if username else "", userfullname)
     msg = message.text
     await sio.emit("get_user_msg", (userfullname, msg))
     reply_msg = await client_toast_with_input(userfullname, msg)

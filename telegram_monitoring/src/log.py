@@ -1,13 +1,10 @@
 import colorlog
 import logging
-from telegram_monitoring.src.config import config
+from telegram_monitoring.src.config import config, LOG_LEVELS
 
 log_level_dist = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL,
+    level: getattr(logging, level)
+    for level in LOG_LEVELS
 }
 
 handler = colorlog.StreamHandler()

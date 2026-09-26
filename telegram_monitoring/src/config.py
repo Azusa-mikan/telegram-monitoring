@@ -1,8 +1,10 @@
-from pydantic import BaseModel, ValidationError, ConfigDict
+from pydantic import BaseModel, ValidationError, ConfigDict, field_validator
 import yaml
 import sys
 import secrets
 from pathlib import Path
+
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 default_config = {
     "lang": "zh_CN",
@@ -41,6 +43,14 @@ class Config(BaseModel):
     max_window: int
     telegram: TelegramConfig
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("log_level")
+    @classmethod
+    def _check_log_level(cls, v: str) -> str:
+        v = v.upper()
+        if v not in LOG_LEVELS:
+            raise ValueError(f"log_level must be one of {', '.join(LOG_LEVELS)}")
+        return v
 
 def load_config(config_path = Path(__file__).parents[2] / "config.yaml") -> Config:
     try:
