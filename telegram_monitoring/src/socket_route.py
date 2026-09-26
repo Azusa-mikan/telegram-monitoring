@@ -116,9 +116,11 @@ async def disconnect(sid: str):
     global client_sid, listen_client_sid
     if sid == client_sid:
         client_sid = ""
+        # 只有数据源（桌面客户端）断开才清空窗口列表；
+        # 监听端断开或无关连接断开都不应影响已采集的窗口数据。
+        now_window_list.clear()
     elif sid == listen_client_sid:
         listen_client_sid = ""
-    now_window_list.clear()
     socketio_log.info(itr.socketio.disconnected.format(sid=sid))
 
 async def emit_window_change(emit: bool) -> tuple[str, dict]:
