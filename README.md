@@ -8,6 +8,8 @@ The server runs on Windows/macOS/Linux.
 
 The client supports Windows 10/11 and Android 6.0+ only.
 
+2026-09-26 Update: The client now supports Linux (KDE Plasma only).
+
 [中文文档](README_zh.md)
 
 ---
