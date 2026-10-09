@@ -525,9 +525,14 @@ def main() -> None:
         )
         sys.exit(1)
 
+    # handle_sigint=False：不让 socketio/engineio 接管 SIGINT。
+    # 它们收到 SIGINT 会 cancel 掉当前任务并 stop 事件循环，导致
+    # asyncio.run() 抛出 CancelledError、按 Ctrl+C 时打印整段 traceback。
+    # 交给下面 main() 末尾的 KeyboardInterrupt 处理即可。
     sio = socketio.AsyncClient(
         reconnection=False,
-        **({"logger": log, "engineio_logger": log, "handle_sigint": False}
+        handle_sigint=False,
+        **({"logger": log, "engineio_logger": log}
            if config.log_level == "DEBUG" else {}),
     )
 
@@ -649,8 +654,9 @@ def main() -> None:
         # "bound to a different event loop" / "not in a disconnected state"，
         # 导致断线后再也无法重连。重连循环因此放在循环内部。
         asyncio.run(run())
-    except KeyboardInterrupt:
-        log.debug("收到 KeyboardInterrupt，退出...")
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        # 正常退出：Ctrl+C 或事件循环被取消，不应打印 traceback
+        log.info("正在退出...")
     finally:
         watcher.stop()
 
