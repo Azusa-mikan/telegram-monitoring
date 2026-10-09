@@ -15,6 +15,9 @@ The client version of this project includes a screen capture feature. To ensure 
 - 一旦你将用户加入允许列表，即表示您知悉并同意：被列入允许列表的主体在技术上具备在客户端前台/后台运行时获取屏幕内容的能力；若屏幕中包含第三方个人隐私或其他敏感信息，相关风险由部署方及实际使用者自行承担。  
   Once you add an account to the allow list, you acknowledge and agree that the party in the allow list is technically able to obtain the screen content while the client is running in the foreground or background. If the screen contains third‑party personal information or other sensitive data, all related risks are borne by the deployer and the actual user.
 
+- 在 GNOME（Wayland）上，客户端依赖随项目提供的 GNOME Shell 扩展（`gnome_extension/`）来读取前台窗口与截图。该扩展通过当前用户的会话 D-Bus 暴露「窗口标题」与「截图」能力，因此同一用户下运行的任意程序在技术上均可调用它以读取窗口标题或触发截图。  
+  On GNOME (Wayland), the client relies on the bundled GNOME Shell extension (`gnome_extension/`) to read the focused window and take screenshots. The extension exposes the window title and a screenshot method over the user-session D-Bus, so any program running as the same user can technically call it to read window titles or trigger a screenshot.
+
 - 强烈建议在以下情形中谨慎使用或关闭截屏功能，或不将任何用户加入允许列表：  
   You are strongly advised to use this feature with caution or disable screenshot functionality and avoid adding any account to the allow list in the following situations:
   - 处理高敏感级别数据（如生产数据库、金融数据、医疗记录等）；  

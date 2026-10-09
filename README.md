@@ -8,7 +8,7 @@ The server runs on Windows/macOS/Linux.
 
 The client supports Windows 10/11 and Android 6.0+ only.
 
-2026-09-26 Update: The client now supports Linux (KDE Plasma only).
+2026-10-09 Update: The client now supports Linux (KDE Plasma 6 and GNOME Shell 45+).
 
 [中文文档](README_zh.md)
 
@@ -89,6 +89,33 @@ You only need to modify all actions named `HTTP Request (POST)`.
 Make the same changes to the remaining `HTTP Request (POST)` actions.
 
 Finally, disable battery optimization for MacroDroid and keep it running in the background.
+
+#### Linux
+
+Two desktop environments are supported; pick the client that matches yours:
+
+- **KDE Plasma 6 (Wayland/X11)**: `linux_client_kde.py`, uses the KWin scripting interface.
+- **GNOME Shell 45+ (Wayland)**: `linux_client_gnome.py`, requires the bundled Shell extension.
+
+```bash
+# Make sure uv is installed
+uv sync --dev
+
+# —— KDE Plasma ——
+uv run --dev python linux_client_kde.py
+
+# —— GNOME ——
+# 1. Install and enable the Shell extension (it reads the focused window inside the Shell process)
+mkdir -p ~/.local/share/gnome-shell/extensions
+cp -r gnome_extension/telegram-monitoring@azusa-mikan ~/.local/share/gnome-shell/extensions/
+gnome-extensions enable telegram-monitoring@azusa-mikan
+# Note: on GNOME Wayland a newly installed extension only loads after re-login
+# 2. Run the client
+uv run --dev python linux_client_gnome.py
+```
+
+The Linux client only reports the foreground window, takes screenshots, shows desktop notifications and reports hardware info; it does not support message replies.
+On GNOME, screenshots are taken by the extension above (bypassing the permission allowlist of GNOME's built-in screenshot interface).
 
 ---
 

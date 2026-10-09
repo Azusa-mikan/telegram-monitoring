@@ -1,0 +1,7 @@
+{
+  "uuid": "telegram-monitoring@azusa-mikan",
+  "name": "Telegram Monitoring",
+  "description": "Exposes the focused window (title / class) and a screenshot method over D-Bus for the Telegram Monitoring Linux client.",
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
+  "url": "https://github.com/Azusa-mikan/telegram-monitoring"
+}

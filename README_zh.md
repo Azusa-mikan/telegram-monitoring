@@ -8,7 +8,7 @@
 
 客户端仅支持 Windows10/11、Android 6.0 及以上系统
 
-2026-09-26 更新: 客户端现在支持 Linux（仅兼容 KDE Plasma）
+2026-10-09 更新: 客户端现在支持 Linux（KDE Plasma 6 与 GNOME Shell 45+）
 
 ---
 
@@ -90,6 +90,33 @@ uv run client.py
 剩下的 `HTTP 请求 (POST)` 动作也一样更改
 
 最后关闭 MacroDroid 的电池优化并常驻后台即可
+
+#### Linux
+
+支持以下两种桌面环境，按你的环境选择对应客户端：
+
+- **KDE Plasma 6（Wayland/X11）**：`linux_client_kde.py`，通过 KWin 脚本接口获取前台窗口
+- **GNOME Shell 45+（Wayland）**：`linux_client_gnome.py`，需先安装随项目的 Shell 扩展
+
+```bash
+# 确保你已安装 uv
+uv sync --dev
+
+# —— KDE Plasma ——
+uv run --dev python linux_client_kde.py
+
+# —— GNOME ——
+# 1. 安装并启用 Shell 扩展（扩展在 Shell 进程内读取前台窗口）
+mkdir -p ~/.local/share/gnome-shell/extensions
+cp -r gnome_extension/telegram-monitoring@azusa-mikan ~/.local/share/gnome-shell/extensions/
+gnome-extensions enable telegram-monitoring@azusa-mikan
+# 注意：GNOME Wayland 下新安装的扩展需要重新登录后才会加载
+# 2. 运行客户端
+uv run --dev python linux_client_gnome.py
+```
+
+Linux 客户端仅做前台窗口上报、截图、桌面通知与硬件信息，不支持消息回复。
+GNOME 版截图由上述扩展完成（不经过 GNOME 内置截图接口的权限白名单）。
 
 ---
 
